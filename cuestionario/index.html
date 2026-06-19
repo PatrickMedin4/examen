@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuestionario de Arrastrar</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    
+    <div class="notebook-container">
+        <div class="notebook-page">
+            
+
+
+            <h1 class="notebook-title">Tarea: Cuestionario de Arrastrar</h1>
+            
+            <!-- Pregunta 1 -->
+            <div class="bloque">
+                <div class="pregunta" draggable="true" data-respuesta="San Salvador">¿Cuál es la capital de El Salvador?</div>
+                <div class="respuestas-grupo">
+                    <div class="respuesta" data-correcta="San Salvador">San Salvador</div>
+                    <div class="respuesta" data-correcta="San Salvador">Santa Ana</div>
+                    <div class="respuesta" data-correcta="San Salvador">La Libertad</div>
+                </div>
+            </div>
+
+            <!-- Pregunta 2 -->
+            <div class="bloque">
+                <div class="pregunta" draggable="true" data-respuesta="8">¿Cuánto es 5 + 3?</div>
+                <div class="respuestas-grupo">
+                    <div class="respuesta" data-correcta="8">8</div>
+                    <div class="respuesta" data-correcta="8">5</div>
+                    <div class="respuesta" data-correcta="8">9</div>
+                </div>
+            </div>
+
+            <!-- Pregunta 3 -->
+            <div class="bloque">
+                <div class="pregunta" draggable="true" data-respuesta="9">¿Cuánto es 6 + 3?</div>
+                <div class="respuestas-grupo">
+                    <div class="respuesta" data-correcta="9">9</div>
+                    <div class="respuesta" data-correcta="9">7</div>
+                    <div class="respuesta" data-correcta="9">6</div>
+                </div>
+            </div>
+
+            <!-- Pregunta 4 -->
+            <div class="bloque">
+                <div class="pregunta" draggable="true" data-respuesta="Madrid">¿Cuál es la capital de España?</div>
+                <div class="respuestas-grupo">
+                    <div class="respuesta" data-correcta="Madrid">Madrid</div>
+                    <div class="respuesta" data-correcta="Madrid">Barcelona</div>
+                    <div class="respuesta" data-correcta="Madrid">Valencia</div>
+                </div>
+            </div>
+
+            <!-- Pregunta 5 -->
+            <div class="bloque">
+                <div class="pregunta" draggable="true" data-respuesta="1 de mayo de 1885">¿Cuándo se fundó el Instituto Nacional "General Francisco Menéndez"?</div>
+                <div class="respuestas-grupo">
+                    <div class="respuesta" data-correcta="1 de mayo de 1885">1 de mayo de 1885</div>
+                    <div class="respuesta" data-correcta="1 de mayo de 1885">15 de septiembre de 1821</div>
+                    <div class="respuesta" data-correcta="1 de mayo de 1885">20 de octubre de 1900</div>
+                </div>
+            </div>
+
+            <!-- Pregunta 6 -->
+            <div class="bloque">
+                <div class="pregunta" draggable="true" data-respuesta="Agua">¿Cuál es el compuesto químico más abundante en la Tierra?</div>
+                <div class="respuestas-grupo">
+                    <div class="respuesta" data-correcta="Agua">Agua</div>
+                    <div class="respuesta" data-correcta="Agua">Oxígeno</div>
+                    <div class="respuesta" data-correcta="Agua">Dióxido de carbono</div>
+                </div>
+            </div>
+
+            <!-- Pregunta 7 -->
+            <div class="bloque">
+                <div class="pregunta" draggable="true" data-respuesta="Miguel de Cervantes">¿Quién escribió la famosa novela "Don Quijote de la Mancha"?</div>
+                <div class="respuestas-grupo">
+                    <div class="respuesta" data-correcta="Miguel de Cervantes">Gabriel García Márquez</div>
+                    <div class="respuesta" data-correcta="Miguel de Cervantes">Miguel de Cervantes</div>
+                    <div class="respuesta" data-correcta="Miguel de Cervantes">Federico García Lorca</div>
+                </div>
+            </div>
+
+            <!-- Pregunta 8 -->
+            <div class="bloque">
+                <div class="pregunta" draggable="true" data-respuesta="Ganso">¿Qué tipo de ave es el personaje de cuento de hadas "Mamá Oca"?</div>
+                <div class="respuestas-grupo">
+                    <div class="respuesta" data-correcta="Ganso">Cisne</div>
+                    <div class="respuesta" data-correcta="Ganso">Pato</div>
+                    <div class="respuesta" data-correcta="Ganso">Ganso</div>
+                </div>
+            </div>
+
+            <!-- Pregunta 9 -->
+            <div class="bloque">
+                <div class="pregunta" draggable="true" data-respuesta="El Sol">¿Cuál es la estrella más cercana a nuestro planeta Tierra?</div>
+                <div class="respuestas-grupo">
+                    <div class="respuesta" data-correcta="El Sol">Alfa Centauri</div>
+                    <div class="respuesta" data-correcta="El Sol">El Sol</div>
+                    <div class="respuesta" data-correcta="El Sol">Sirio</div>
+                </div>
+            </div>
+
+            <!-- Pregunta 10 -->
+            <div class="bloque">
+                <div class="pregunta" draggable="true" data-respuesta="El Amazonas">¿Cuál es el río más largo y caudaloso del mundo?</div>
+                <div class="respuestas-grupo">
+                    <div class="respuesta" data-correcta="El Amazonas">El Nilo</div>
+                    <div class="respuesta" data-correcta="El Amazonas">El Misisipi</div>
+                    <div class="respuesta" data-correcta="El Amazonas">El Amazonas</div>
+                </div>
+            </div>
+
+            <div class="action-zone">
+                <button class="notebook-btn" onclick="calcularNota()">Finalizar</button>
+                <div id="resultado" class="resultado-nota"></div>
+            </div>
+        </div>
+    </div>
+
+                <div style="margin-bottom: 20px;">
+                <button onclick="window.history.back()" class="notebook-btn" style="background-color: #9b111e; color: white;">
+                    ⬅️ Volver al Cuaderno
+                </button>
+                </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

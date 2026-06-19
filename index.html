@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuaderno Digital — INFRAMEN</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.ckeditor.com/4.22.1/full/ckeditor.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ======= CONTENEDOR PRINCIPAL ======= -->
+    <div class="container">
+
+        <!-- Cabecera -->
+        <div class="cabecera">
+            <h1>Instituto Nacional "General Francisco Menéndez" — INFRAMEN 🦂</h1>
+            <h2>Cuaderno Digital de: <em>Brandon Patrick.</em></h2>
+            <p>Sección 1-2 · Desarrollo de Software</p>
+        </div>
+
+        <!-- Título de la hoja -->
+        <input type="text" id="titulo" placeholder="Título de la hoja...">
+
+        <!-- Barra de acciones -->
+        <div class="actions-bar">
+            <button class="btn-guardar"  onclick="guardarNota()">💾 Guardar</button>
+            <button class="btn-cargar"   onclick="cargarNota()">📂 Cargar</button>
+            <button class="btn-listar"   onclick="abrirModalNotas()">📋 Ver Notas</button>
+            <button class="btn-borrar"   onclick="eliminarNota()">🗑 Borrar</button>
+            <button class="btn-pdf"      onclick="generarPDF()">📄 PDF</button>
+            <button class="btn-libro"    onclick="abrirLibro()">📖 Ver Libro</button>
+            <a href="cuestionario/index.html">
+                <button class="btn-cuestionario">❓ Cuestionario</button>
+            </a>
+        </div>
+
+        <!-- Inputs ocultos -->
+        <input
+            type="file"
+            id="file-input-hidden"
+            style="display:none"
+            accept=".pdf,.docx,.doc,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.bmp,.svg"
+            onchange="manejarArchivoSubido(this)"
+        >
+        <input
+            type="file"
+            id="restore-input-hidden"
+            style="display:none"
+            accept=".json"
+            onchange="importarNotas(this)"
+        >
+
+        <!-- Editor CKEditor -->
+        <textarea id="editor"></textarea>
+
+        <!-- ======= SECCIÓN: LIBRO ESPIRAL ======= -->
+        <div class="seccion-libro" id="seccion-libro">
+            <h3>📖 Vista de Libro</h3>
+            <p class="libro-subtitulo">Haz clic en la portada para abrir el cuaderno</p>
+
+            <div class="cuaderno-escena">
+                <div class="cuaderno-cuerpo" id="cuaderno-cuerpo">
+
+                    <!-- Tapa trasera -->
+                    <div class="cuaderno-tapa-trasera"></div>
+
+                    <!-- Páginas interiores -->
+                    <div class="cuaderno-paginas" id="cuaderno-paginas">
+                        <div class="pagina-contenido">
+                            <div class="pagina-titulo" id="pagina-titulo">—</div>
+                            <div class="pagina-cuerpo"  id="pagina-cuerpo"></div>
+                        </div>
+                        <div class="pagina-numero" id="pagina-numero">1</div>
+                    </div>
+
+                    <!-- Tapa delantera — debe ir DESPUÉS del SVG para estar encima en DOM -->
+                    <div class="cuaderno-tapa-front" id="cuaderno-tapa" onclick="toggleTapa()">
+                        <div class="tapa-lomo"></div>
+                        <div class="tapa-linea"></div>
+                        <div class="tapa-titulo" id="tapa-titulo">Cuaderno Digital</div>
+                        <div class="tapa-linea"></div>
+                    </div>
+
+                    <!-- Espiral SVG — SIEMPRE al final para estar visualmente encima
+                         pero con pointer-events:none para no bloquear clicks a la tapa -->
+                    <svg class="cuaderno-espiral" id="espiral-svg"
+                         viewBox="0 0 28 560" preserveAspectRatio="none"
+                         xmlns="http://www.w3.org/2000/svg">
+                    </svg>
+
+                    <!-- Overlay invisible: captura clicks cuando la tapa está cerrada
+                         y los propaga a la tapa. Cubre solo la zona del lomo/espiral. -->
+                    <div id="tapa-click-overlay" onclick="manejarClickEscena(event)"
+                         style="position:absolute;inset:0;z-index:25;
+                                background:transparent;cursor:pointer;
+                                pointer-events:auto;">
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Navegación de páginas -->
+            <div class="libro-nav" id="libro-nav">
+                <button class="nav-btn" id="btn-prev" onclick="cambiarPaginaLibro(-1)">&#8592;</button>
+                <div class="nav-dots" id="nav-dots"></div>
+                <span class="nav-info" id="nav-info">Pág 1 / 1</span>
+                <button class="nav-btn" id="btn-next" onclick="cambiarPaginaLibro(1)">&#8594;</button>
+            </div>
+
+            <div class="libro-acciones">
+                <button class="btn-toggle-cuaderno" id="btn-toggle-tapa" onclick="toggleTapa()">Abrir cuaderno</button>
+                <button class="btn-cerrar" onclick="cerrarLibro()">✕ Cerrar sección</button>
+            </div>
+        </div>
+
+    </div><!-- fin .container -->
+
+    <!-- ======= MODAL: LISTA DE NOTAS ======= -->
+    <div class="modal-overlay" id="modal-notas" onclick="cerrarModalSiFondo(event)">
+        <div class="modal-box">
+            <h3>📋 Notas guardadas</h3>
+            <div class="modal-search">
+                <input type="text" id="modal-search-input" placeholder="🔍 Filtrar notas..." oninput="filtrarModalNotas(this.value)">
+            </div>
+            <div class="lista-notas" id="lista-notas-contenido"></div>
+            <button class="btn-cerrar" onclick="cerrarModalNotas()">✕ Cerrar</button>
+        </div>
+    </div>
+
+    <!-- ======= TOAST CONTAINER ======= -->
+    <div id="toast-container"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

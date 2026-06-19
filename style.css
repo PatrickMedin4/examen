@@ -1,0 +1,476 @@
+/* ==========================================================================
+   VARIABLES Y CONFIGURACIÓN BASE
+   ========================================================================== */
+:root {
+    --primary-color: #0d47a1;     /* Azul INFRAMEN */
+    --secondary-color: #e65100;   /* Naranja de acento / Escorpión */
+    --bg-dark: #121212;
+    --bg-container: #1e1e1e;
+    --bg-input: #2a2a2a;
+    --text-main: #f5f5f5;
+    --text-muted: #b0bec5;
+    --border-color: #3d3d3d;
+    --font-titles: 'Playfair Display', serif;
+    --font-sans: 'DM Sans', sans-serif;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    --transition: all 0.3s ease;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* Contenedor Principal */
+.container {
+    width: 100%;
+    max-width: 950px;
+    background-color: var(--bg-container);
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+/* ==========================================================================
+   CABECERA
+   ========================================================================== */
+.cabecera {
+    text-align: center;
+    margin-bottom: 25px;
+    border-bottom: 2px dashed var(--border-color);
+    padding-bottom: 20px;
+}
+
+.cabecera h1 {
+    font-family: var(--font-titles);
+    font-size: 1.8rem;
+    color: var(--text-main);
+    margin-bottom: 5px;
+}
+
+.cabecera h2 {
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.cabecera h2 em {
+    color: var(--secondary-color);
+    font-style: normal;
+    font-weight: 600;
+}
+
+.cabecera p {
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 5px;
+    font-weight: 600;
+}
+
+/* Input de Título de la Hoja */
+#titulo {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-main);
+    font-size: 1.1rem;
+    font-family: var(--font-sans);
+    margin-bottom: 20px;
+    transition: var(--transition);
+}
+
+#titulo:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px rgba(13, 71, 161, 0.5);
+}
+
+/* ==========================================================================
+   BARRA DE ACCIONES (BOTONES)
+   ========================================================================== */
+.actions-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.actions-bar a {
+    text-decoration: none;
+}
+
+button {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+button:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.2);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* Colores de los botones */
+.btn-guardar { background-color: #2e7d32; color: white; }
+.btn-cargar { background-color: #1565c0; color: white; }
+.btn-listar { background-color: #00838f; color: white; }
+.btn-borrar { background-color: #c62828; color: white; }
+.btn-pdf { background-color: #ef6c00; color: white; }
+.btn-libro { background-color: #6a1b9a; color: white; }
+.btn-cuestionario { background-color: #ad1457; color: white; }
+
+/* CKEditor Adaptación Visual */
+.cke {
+    border-radius: 8px !important;
+    overflow: hidden;
+    border: 1px solid var(--border-color) !important;
+}
+
+/* ==========================================================================
+   SECCIÓN LIBRO ESPIRAL (3D EFFECT)
+   ========================================================================== */
+/* ==========================================================================
+   SECCIÓN LIBRO ESPIRAL (EFECTOS 3D ACTUALIZADOS PARA TU SCRIPT)
+   ========================================================================== */
+.seccion-libro {
+    display: none; /* Controlado dinámicamente por abrirLibro() y cerrarLibro() */
+    margin-top: 30px;
+    padding: 25px;
+    background-color: #1a1a1a;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    text-align: center;
+}
+
+.seccion-libro h3 {
+    font-family: var(--font-titles);
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+}
+
+.libro-subtitulo {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 25px;
+}
+
+/* Escena 3D */
+.cuaderno-escena {
+    perspective: 1500px;
+    display: flex;
+    justify-content: center;
+    margin: 40px auto;
+    width: 340px; 
+    height: 480px;
+}
+
+.cuaderno-cuerpo {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.85s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Cuando la tapa tiene la clase .abierta (añadida por tu script), 
+   desplazamos el cuerpo a la derecha para centrar el libro abierto */
+.cuaderno-cuerpo:has(#cuaderno-tapa.abierta) {
+    transform: translateX(25%) rotateY(0deg);
+}
+
+/* Tapas y Páginas */
+.cuaderno-tapa-front, .cuaderno-tapa-trasera, .cuaderno-paginas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    border-radius: 4px 12px 12px 4px;
+    box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
+}
+
+/* Tapa Delantera */
+.cuaderno-tapa-front {
+    background-color: var(--primary-color);
+    background-image: linear-gradient(135deg, rgba(255,255,255,0.05) 25%, transparent 25%);
+    border-left: 5px solid #0a3375;
+    z-index: 20;
+    transform-origin: left center;
+    transition: transform 0.85s cubic-bezier(0.4, 0, 0.2, 1), z-index 0.85s;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    backface-visibility: hidden;
+    cursor: pointer;
+}
+
+/* ESTADO ABIERTO: Rotación de la tapa según tu script (-170deg o -180deg) */
+#cuaderno-tapa.abierta {
+    transform: rotateY(-170deg);
+    z-index: 1;
+}
+
+.tapa-titulo {
+    font-family: var(--font-titles);
+    font-size: 1.6rem;
+    color: white;
+    text-align: center;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+    margin: 15px 0;
+}
+
+.tapa-linea {
+    width: 60%;
+    height: 2px;
+    background-color: var(--secondary-color);
+}
+
+/* Estilo para el Hint que busca tu script (.tapa-hint) */
+.tapa-hint {
+    margin-top: 20px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-style: italic;
+    letter-spacing: 1px;
+}
+
+/* Tapa Trasera */
+.cuaderno-tapa-trasera {
+    background-color: #0a3375;
+    z-index: 5;
+}
+
+/* Páginas Interiores */
+.cuaderno-paginas {
+    background-color: #fffdec; 
+    color: #222;
+    z-index: 10;
+    padding: 30px 25px 30px 35px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: inset 3px 0 10px rgba(0,0,0,0.15);
+    
+    /* Configuración de oculto inicial para animación de tu script */
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+}
+
+/* Clase añadida por el setTimeout de tu script */
+.cuaderno-paginas.visible {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
+.pagina-titulo {
+    font-family: var(--font-titles);
+    font-size: 1.3rem;
+    font-weight: 700;
+    border-bottom: 2px solid #b0bec5;
+    padding-bottom: 5px;
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.pagina-cuerpo {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    text-align: left;
+    overflow-y: auto;
+    flex-grow: 1;
+    max-height: 340px;
+}
+
+.pagina-numero {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: right;
+    color: #757575;
+}
+
+/* Espiral SVG */
+.cuaderno-espiral {
+    position: absolute;
+    left: -10px;
+    top: 5%;
+    width: 20px;
+    height: 90%;
+    z-index: 30;
+    pointer-events: none;
+    background-image: radial-gradient(circle, #757575 30%, transparent 40%);
+    background-size: 100% 20px;
+}
+
+/* Navegación Inferior */
+#libro-nav {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+#libro-nav.visible {
+    opacity: 1;
+}
+
+.libro-nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+/* Estilos de los Dots interactivos generados en abrirLibro() */
+.nav-dots {
+    display: flex;
+    gap: 8px;
+}
+
+.nav-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--border-color);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.nav-dot.activo {
+    background-color: var(--secondary-color);
+    transform: scale(1.2);
+}
+
+.nav-btn {
+    background-color: #333;
+    color: white;
+    padding: 5px 12px;
+}
+
+.nav-info {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.libro-acciones {
+    margin-top: 25px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.btn-toggle-cuaderno { background-color: var(--secondary-color); color: white; }
+.btn-cerrar { background-color: #424242; color: white; }
+
+/* ==========================================================================
+   MODAL Y COMPONENTES EXTRA
+   ========================================================================== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0,0,0,0.7);
+    z-index: 100;
+    display: none; /* Controlado por JS */
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(4px);
+}
+
+.modal-box {
+    background-color: var(--bg-container);
+    border: 1px solid var(--border-color);
+    padding: 25px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: var(--shadow);
+}
+
+.modal-box h3 {
+    margin-bottom: 15px;
+}
+
+.modal-search input {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: white;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.lista-notas-contenido {
+    max-height: 250px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
+
+/* Toasts (Notificaciones flotantes) */
+#toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    background-color: #323232;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 6px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    font-size: 0.9rem;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Responsividad */
+@media (max-width: 600px) {
+    body { padding: 10px; }
+    .container { padding: 15px; }
+    .actions-bar { justify-content: center; }
+    button { width: 100%; justify-content: center; }
+    .cuaderno-escena { width: 280px; height: 400px; }
+    .cuaderno-cuerpo.abierto { transform: translateX(0); /* Evita salirse de pantalla en móvil */ }
+}

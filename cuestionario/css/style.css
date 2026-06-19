@@ -1,0 +1,175 @@
+/* --- Variables de Color (Paleta JavaScript) --- */
+:root {
+    --js-yellow: #F7DF1E;
+    --js-dark: #323330;
+    --js-black: #1E1F1C;
+    --light-gray: #F4F4F5;
+    --border-color: #E4E4E7;
+    --text-color: #333333;
+    --white: #FFFFFF;
+}
+
+/* --- Estilos Generales --- */
+*, *::before, *::after {
+    box-sizing: border-box; /* Previene que el padding altere el ancho real */
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--js-black);
+    color: var(--text-color);
+    margin: 0;
+    padding: 1rem; /* Margen adaptivo para pantallas chicas */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* --- Contenedores Principales --- */
+.notebook-container {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.notebook-page {
+    background-color: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    padding: 1.5rem; /* Padding reducido por defecto para móviles */
+    border-left: 8px solid var(--js-yellow); /* Detalle lateral más delgado en móvil */
+    width: 100%;
+}
+
+/* --- Títulos y Botones --- */
+.notebook-title {
+    color: var(--js-dark);
+    font-size: 1.5rem; /* Tamaño móvil primero */
+    margin-bottom: 1.5rem;
+    border-bottom: 3px solid var(--js-yellow);
+    padding-bottom: 0.5rem;
+    word-wrap: break-word; /* Evita que títulos largos rompan el diseño */
+}
+
+.notebook-btn {
+    font-weight: bold;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    white-space: normal; /* Permite que el texto del botón baje de línea si es necesario */
+}
+
+/* Botón Finalizar con colores JS */
+.action-zone .notebook-btn {
+    background-color: var(--js-yellow);
+    color: var(--js-dark);
+    width: 100%; /* Botón ancho completo en móviles */
+    justify-content: center;
+}
+
+.action-zone .notebook-btn:hover {
+    background-color: var(--js-dark);
+    color: var(--js-yellow);
+}
+
+/* --- Bloques de Preguntas y Respuestas --- */
+.bloque {
+    background-color: var(--light-gray);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.pregunta {
+    background-color: var(--js-dark);
+    color: var(--js-yellow);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: grab;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    user-select: none;
+    font-size: 0.95rem;
+}
+
+.pregunta:active {
+    cursor: grabbing;
+    opacity: 0.8;
+}
+
+/* Respuestas en columna única para móvil por defecto */
+.respuestas-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.respuesta {
+    background-color: var(--white);
+    border: 2px dashed var(--js-dark);
+    color: var(--js-dark);
+    padding: 0.75rem;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: background-color 0.2s ease;
+}
+
+/* --- Zona de Resultados --- */
+.action-zone {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+.resultado-nota {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--js-dark);
+    text-align: center;
+}
+
+/* ==========================================================================
+   Media Queries (Optimización para pantallas medianas y grandes)
+   ========================================================================== */
+
+/* Tabletas y Escritorios (Ancho mayor a 600px) */
+@media (min-width: 600px) {
+    body {
+        padding: 2rem;
+    }
+
+    .notebook-page {
+        padding: 2.5rem;
+        border-left-width: 15px; /* Detalle lateral más grueso en pantallas grandes */
+    }
+
+    .notebook-title {
+        font-size: 2rem;
+    }
+
+    /* Las respuestas se ordenan en columnas automáticas si hay espacio */
+    .respuestas-grupo {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+    }
+
+    .action-zone .notebook-btn {
+        width: auto; /* El botón recupera su tamaño contenido */
+    }
+}
