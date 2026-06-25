@@ -1,12 +1,15 @@
+/* ============================================================
+   INICIALIZACIÓN DE CKEDITOR
+   ============================================================ */
 CKEDITOR.config.versionCheck = false;
 CKEDITOR.replace('editor', {
     removePlugins: 'exportpdf,cloudservices,easyimage',
-    height: 340
+    height: 360
 });
 
-// ============================================================
-//  SISTEMA DE TOASTS
-// ============================================================
+/* ============================================================
+   SISTEMA DE TOASTS
+   ============================================================ */
 function mostrarToast(mensaje, tipo = 'info', duracion = 3000) {
     const contenedor = document.getElementById('toast-container');
     const toast = document.createElement('div');
@@ -15,21 +18,42 @@ function mostrarToast(mensaje, tipo = 'info', duracion = 3000) {
     contenedor.appendChild(toast);
     setTimeout(() => {
         toast.classList.add('toast-saliendo');
-        toast.addEventListener('animationend', () => toast.remove());
+        toast.addEventListener('animationend', () => toast.remove(), { once: true });
     }, duracion);
 }
 
-// ============================================================
-//  AUTOGUARDADO
-// ============================================================
-let autoguardadoTimer = null;
+/* ============================================================
+   CONTADOR DE PALABRAS
+   ============================================================ */
+function actualizarContadorPalabras() {
+    const contenido = CKEDITOR.instances.editor
+        ? CKEDITOR.instances.editor.getData()
+        : '';
+    const texto = contenido.replace(/<[^>]*>/g, ' ').trim();
+    const palabras = texto ? texto.split(/\s+/).filter(Boolean).length : 0;
+    const chars    = texto.replace(/\s/g, '').length;
+    const el = document.getElementById('contador-palabras');
+    if (el) el.textContent = `${palabras} palabra${palabras !== 1 ? 's' : ''} · ${chars} caracteres`;
+}
+
+/* ============================================================
+   AUTOGUARDADO
+   ============================================================ */
+let autoguardadoTimer           = null;
 let ultimoContenidoAutoguardado = '';
-let ultimoTituloAutoguardado = '';
+let ultimoTituloAutoguardado    = '';
 
 function iniciarAutoguardado() {
-    CKEDITOR.instances.editor.on('change', programarAutoguardado);
-    CKEDITOR.instances.editor.on('key',    programarAutoguardado);
+    CKEDITOR.instances.editor.on('change', () => {
+        programarAutoguardado();
+        actualizarContadorPalabras();
+    });
+    CKEDITOR.instances.editor.on('key', () => {
+        programarAutoguardado();
+        actualizarContadorPalabras();
+    });
     document.getElementById('titulo').addEventListener('input', programarAutoguardado);
+    actualizarContadorPalabras();
 }
 
 function programarAutoguardado() {
@@ -48,8 +72,8 @@ function ejecutarAutoguardado() {
         ultimoTituloAutoguardado    = titulo;
         ultimoContenidoAutoguardado = contenido;
         actualizarIndicador('guardado');
-        mostrarToast('💾 Autoguardado: "' + titulo + '"', 'exito', 2000);
-    } catch(e) {
+        mostrarToast(`💾 Autoguardado: "${titulo}"`, 'exito', 2000);
+    } catch (e) {
         actualizarIndicador('error');
         mostrarToast('⚠️ Autoguardado falló. Almacenamiento lleno.', 'error');
     }
@@ -61,8 +85,8 @@ function actualizarIndicador(estado) {
     const estados = {
         inactivo:  { texto: '',                           clase: '' },
         esperando: { texto: '○ Cambios sin guardar',      clase: 'ag-esperando' },
-        guardado:  { texto: '✓ Guardado automáticamente', clase: 'ag-guardado' },
-        error:     { texto: '✕ Error al autoguardar',     clase: 'ag-error' },
+        guardado:  { texto: '✓ Guardado automáticamente', clase: 'ag-guardado'  },
+        error:     { texto: '✕ Error al autoguardar',     clase: 'ag-error'     },
     };
     const { texto, clase } = estados[estado] || estados.inactivo;
     indicador.textContent = texto;
@@ -72,8 +96,8 @@ function actualizarIndicador(estado) {
 window.addEventListener('beforeunload', (e) => {
     const titulo    = document.getElementById('titulo').value.trim();
     const contenido = CKEDITOR.instances.editor.getData();
-    const hayContenido  = titulo && contenido;
-    const hayPendiente  = contenido !== ultimoContenidoAutoguardado || titulo !== ultimoTituloAutoguardado;
+    const hayContenido = titulo && contenido;
+    const hayPendiente = contenido !== ultimoContenidoAutoguardado || titulo !== ultimoTituloAutoguardado;
     if (hayContenido && hayPendiente) {
         e.preventDefault();
         e.returnValue = '';
@@ -82,9 +106,9 @@ window.addEventListener('beforeunload', (e) => {
 
 CKEDITOR.instances.editor.on('instanceReady', iniciarAutoguardado);
 
-// ============================================================
-//  GUARDAR NOTA
-// ============================================================
+/* ============================================================
+   GUARDAR NOTA
+   ============================================================ */
 function guardarNota() {
     const titulo    = document.getElementById('titulo').value.trim();
     const contenido = CKEDITOR.instances.editor.getData();
@@ -97,14 +121,14 @@ function guardarNota() {
         clearTimeout(autoguardadoTimer);
         actualizarIndicador('guardado');
         mostrarToast(`💾 "${titulo}" guardada correctamente.`, 'exito');
-    } catch(e) {
+    } catch (e) {
         mostrarToast('❌ Error al guardar. Almacenamiento lleno.', 'error');
     }
 }
 
-// ============================================================
-//  CARGAR NOTA
-// ============================================================
+/* ============================================================
+   CARGAR NOTA
+   ============================================================ */
 function cargarNota() {
     const titulo = document.getElementById('titulo').value.trim();
     if (!titulo) { abrirModalNotas(); return; }
@@ -115,15 +139,16 @@ function cargarNota() {
         ultimoContenidoAutoguardado = contenido;
         clearTimeout(autoguardadoTimer);
         actualizarIndicador('guardado');
+        actualizarContadorPalabras();
         mostrarToast(`📂 "${titulo}" cargada.`, 'exito');
     } else {
         mostrarToast(`❌ No existe ninguna nota llamada "${titulo}".`, 'error');
     }
 }
 
-// ============================================================
-//  ELIMINAR NOTA
-// ============================================================
+/* ============================================================
+   ELIMINAR NOTA
+   ============================================================ */
 function eliminarNota() {
     const titulo = document.getElementById('titulo').value.trim();
     if (!titulo) { mostrarToast('⚠️ Escribe el título a borrar.', 'error'); return; }
@@ -138,15 +163,143 @@ function eliminarNota() {
         () => {
             localStorage.removeItem(clave);
             CKEDITOR.instances.editor.setData('');
+            document.getElementById('titulo').value = '';
             ultimoContenidoAutoguardado = '';
             ultimoTituloAutoguardado    = '';
             clearTimeout(autoguardadoTimer);
             actualizarIndicador('inactivo');
+            actualizarContadorPalabras();
             mostrarToast(`🗑 "${titulo}" eliminada.`, 'info');
         }
     );
 }
 
+/* ============================================================
+   NUEVA HOJA
+   ============================================================ */
+function nuevaHoja() {
+    const titulo    = document.getElementById('titulo').value.trim();
+    const contenido = CKEDITOR.instances.editor.getData();
+    const hayPendiente = (titulo || contenido) &&
+        (contenido !== ultimoContenidoAutoguardado || titulo !== ultimoTituloAutoguardado);
+
+    if (hayPendiente) {
+        mostrarConfirmacion(
+            '¿Crear nueva hoja?',
+            'Tienes cambios sin guardar. Se perderán si continúas.',
+            () => limpiarEditor()
+        );
+    } else {
+        limpiarEditor();
+    }
+}
+
+function limpiarEditor() {
+    document.getElementById('titulo').value = '';
+    CKEDITOR.instances.editor.setData('');
+    ultimoTituloAutoguardado    = '';
+    ultimoContenidoAutoguardado = '';
+    clearTimeout(autoguardadoTimer);
+    actualizarIndicador('inactivo');
+    actualizarContadorPalabras();
+    document.getElementById('titulo').focus();
+    mostrarToast('✨ Nueva hoja lista.', 'exito', 2000);
+}
+
+/* ============================================================
+   ESTADÍSTICAS
+   ============================================================ */
+function abrirEstadisticas() {
+    const claves   = Object.keys(localStorage).filter(k => k.startsWith('nota__'));
+    const total    = claves.length;
+    let totalPalab = 0;
+    let totalChars = 0;
+    let masLarga   = { titulo: '—', palabras: 0 };
+
+    claves.forEach(clave => {
+        const html   = localStorage.getItem(clave) || '';
+        const texto  = html.replace(/<[^>]*>/g, ' ').trim();
+        const palab  = texto ? texto.split(/\s+/).filter(Boolean).length : 0;
+        totalPalab  += palab;
+        totalChars  += texto.replace(/\s/g, '').length;
+        if (palab > masLarga.palabras) masLarga = { titulo: clave.replace('nota__',''), palabras: palab };
+    });
+
+    const uso = calcularUsoLocalStorage();
+
+    const grid = document.getElementById('stats-contenido');
+    grid.innerHTML = `
+        <div class="stat-card">
+            <span class="stat-valor">${total}</span>
+            <span class="stat-label">Notas guardadas</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-valor">${totalPalab.toLocaleString()}</span>
+            <span class="stat-label">Total palabras</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-valor">${totalChars.toLocaleString()}</span>
+            <span class="stat-label">Caracteres totales</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-valor">${uso.kb} KB</span>
+            <span class="stat-label">Almacenamiento usado</span>
+        </div>
+        ${masLarga.palabras > 0 ? `
+        <div class="stat-card" style="grid-column: 1 / -1;">
+            <span class="stat-valor" style="font-size:1rem; word-break:break-word;">${masLarga.titulo}</span>
+            <span class="stat-label">Nota más larga (${masLarga.palabras} palabras)</span>
+        </div>` : ''}
+    `;
+
+    document.getElementById('modal-stats').classList.add('abierto');
+}
+
+function cerrarEstadisticas() {
+    document.getElementById('modal-stats').classList.remove('abierto');
+}
+
+function calcularUsoLocalStorage() {
+    let total = 0;
+    for (const k in localStorage) {
+        if (!Object.prototype.hasOwnProperty.call(localStorage, k)) continue;
+        total += (localStorage.getItem(k) || '').length + k.length;
+    }
+    return { kb: (total / 1024).toFixed(1) };
+}
+
+/* ============================================================
+   DIÁLOGO DE CONFIRMACIÓN
+   ============================================================ */
+function mostrarConfirmacion(titulo, subtexto, onConfirmar) {
+    document.getElementById('dialogo-confirmacion')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id        = 'dialogo-confirmacion';
+    overlay.className = 'dialogo-overlay';
+    overlay.innerHTML = `
+        <div class="dialogo-box">
+            <p class="dialogo-titulo">${titulo}</p>
+            <p class="dialogo-sub">${subtexto}</p>
+            <div class="dialogo-acciones">
+                <button class="dialogo-cancelar"  id="dialogo-btn-cancelar">Cancelar</button>
+                <button class="dialogo-confirmar" id="dialogo-btn-confirmar">Confirmar</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('visible'));
+
+    const cerrar = () => {
+        overlay.classList.remove('visible');
+        overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+    };
+    document.getElementById('dialogo-btn-cancelar').onclick  = cerrar;
+    document.getElementById('dialogo-btn-confirmar').onclick = () => { cerrar(); onConfirmar(); };
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
+}
+
+/* ============================================================
+   MODAL LISTA DE NOTAS
+   ============================================================ */
 let _notaItems = []; // cache para filtrar
 
 function abrirModalNotas() {
@@ -213,86 +366,9 @@ function borrarDesdeModal(titulo, elemento) {
 function cerrarModalNotas()    { document.getElementById('modal-notas').classList.remove('abierto'); }
 function cerrarModalSiFondo(e) { if (e.target === document.getElementById('modal-notas')) cerrarModalNotas(); }
 
-// ============================================================
-//  DIÁLOGO DE CONFIRMACIÓN
-// ============================================================
-function mostrarConfirmacion(titulo, subtexto, onConfirmar) {
-    document.getElementById('dialogo-confirmacion')?.remove();
-    const overlay = document.createElement('div');
-    overlay.id        = 'dialogo-confirmacion';
-    overlay.className = 'dialogo-overlay';
-    overlay.innerHTML = `
-        <div class="dialogo-box">
-            <p class="dialogo-titulo">${titulo}</p>
-            <p class="dialogo-sub">${subtexto}</p>
-            <div class="dialogo-acciones">
-                <button class="dialogo-cancelar"  id="dialogo-btn-cancelar">Cancelar</button>
-                <button class="dialogo-confirmar" id="dialogo-btn-confirmar">Eliminar</button>
-            </div>
-        </div>`;
-    document.body.appendChild(overlay);
-    requestAnimationFrame(() => overlay.classList.add('visible'));
-    const cerrar = () => {
-        overlay.classList.remove('visible');
-        overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
-    };
-    document.getElementById('dialogo-btn-cancelar').onclick  = cerrar;
-    document.getElementById('dialogo-btn-confirmar').onclick = () => { cerrar(); onConfirmar(); };
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
-}
-
-// ============================================================
-//  MODAL LISTA DE NOTAS
-// ============================================================
-function abrirModalNotas() {
-    const contenedor = document.getElementById('lista-notas-contenido');
-    contenedor.innerHTML = '';
-    const claves = Object.keys(localStorage).filter(k => k.startsWith('nota__'));
-    if (claves.length === 0) {
-        contenedor.innerHTML = '<p class="modal-vacio">No hay notas guardadas todavía.</p>';
-    } else {
-        claves.forEach(clave => {
-            const tituloReal = clave.replace('nota__', '');
-            const item = document.createElement('div');
-            item.className = 'nota-item';
-            item.innerHTML = `
-                <span onclick="cargarDesdeModal('${tituloReal}')">📄 ${tituloReal}</span>
-                <button class="nota-borrar" onclick="borrarDesdeModal('${tituloReal}', this.parentElement)">🗑</button>`;
-            contenedor.appendChild(item);
-        });
-    }
-    document.getElementById('modal-notas').classList.add('abierto');
-}
-
-function cargarDesdeModal(titulo) {
-    document.getElementById('titulo').value = titulo;
-    const contenido = localStorage.getItem('nota__' + titulo);
-    if (contenido) {
-        CKEDITOR.instances.editor.setData(contenido);
-        ultimoTituloAutoguardado    = titulo;
-        ultimoContenidoAutoguardado = contenido;
-        clearTimeout(autoguardadoTimer);
-        actualizarIndicador('guardado');
-        mostrarToast(`📂 "${titulo}" cargada.`, 'exito');
-    }
-    cerrarModalNotas();
-}
-
-function borrarDesdeModal(titulo, elemento) {
-    localStorage.removeItem('nota__' + titulo);
-    elemento.remove();
-    mostrarToast(`🗑 "${titulo}" eliminada.`, 'info');
-    const lista = document.getElementById('lista-notas-contenido');
-    if (lista.children.length === 0)
-        lista.innerHTML = '<p class="modal-vacio">No hay notas guardadas todavía.</p>';
-}
-
-function cerrarModalNotas()       { document.getElementById('modal-notas').classList.remove('abierto'); }
-function cerrarModalSiFondo(e)    { if (e.target === document.getElementById('modal-notas')) cerrarModalNotas(); }
-
-// ============================================================
-//  UTILIDADES PDF
-// ============================================================
+/* ============================================================
+   UTILIDADES PDF
+   ============================================================ */
 function sanitizarNombreArchivo(nombre) {
     return nombre
         .replace(/[\/\\:*?"<>|]/g, '_')
@@ -305,9 +381,9 @@ async function convertirImagenesABase64(elemento) {
     const imgs = elemento.querySelectorAll('img');
     const promesas = Array.from(imgs).map(img => new Promise(resolve => {
         if (!img.src || img.src.startsWith('data:')) { resolve(); return; }
-        const canvas  = document.createElement('canvas');
-        const ctx     = canvas.getContext('2d');
-        const imagen  = new Image();
+        const canvas = document.createElement('canvas');
+        const ctx    = canvas.getContext('2d');
+        const imagen = new Image();
         imagen.crossOrigin = 'anonymous';
         imagen.onload = () => {
             canvas.width  = imagen.naturalWidth;
@@ -317,14 +393,12 @@ async function convertirImagenesABase64(elemento) {
             resolve();
         };
         imagen.onerror = resolve;
-        imagen.src = img.src;
+        imagen.src     = img.src;
     }));
     await Promise.all(promesas);
 }
 
-// ============================================================
-//  BARRA DE PROGRESO FLOTANTE — TEMA OSCURO DORADO
-// ============================================================
+/* ── Barra de progreso PDF ── */
 function mostrarProgresoPDF(porcentaje, mensaje) {
     let c = document.getElementById('pdf-progreso');
     if (!c) {
@@ -332,20 +406,15 @@ function mostrarProgresoPDF(porcentaje, mensaje) {
         c.id = 'pdf-progreso';
         c.setAttribute('role', 'status');
         c.setAttribute('aria-live', 'polite');
-        c.style.cssText = `
-            position:fixed; bottom:1.5rem; right:1.5rem; width:270px;
-            background:#1c1915; border:1px solid #4a3e28; border-radius:10px;
-            padding:14px 16px; box-shadow:0 8px 32px rgba(0,0,0,.75),0 0 20px rgba(200,153,26,.12);
-            font-family:'DM Sans',system-ui,sans-serif; z-index:9999; transition:opacity .4s;`;
         c.innerHTML = `
-            <p id="pdf-prog-msg"   style="margin:0 0 8px;font-size:12px;color:#c8b98a;letter-spacing:.03em;"></p>
-            <div style="background:#0e0c0a;border:1px solid #2e2618;border-radius:6px;height:7px;overflow:hidden;">
+            <p id="pdf-prog-msg"   style="margin:0 0 8px;font-size:13px;color:var(--texto);font-family:'DM Sans',sans-serif;"></p>
+            <div style="background:var(--borde);border-radius:6px;height:8px;overflow:hidden;">
                 <div id="pdf-prog-barra"
-                     style="height:100%;width:0%;background:linear-gradient(90deg,#7a5a0a,#c8991a);
-                            border-radius:6px;transition:width .35s ease;box-shadow:0 0 8px rgba(200,153,26,.5);"></div>
+                     style="height:100%;width:0%;background:var(--acento);
+                            border-radius:6px;transition:width .35s ease;"></div>
             </div>
             <p id="pdf-prog-pct"
-               style="margin:6px 0 0;font-size:10px;color:#7a6a50;text-align:right;font-family:'Courier New',monospace;"></p>`;
+               style="margin:6px 0 0;font-size:11px;color:var(--texto-muted);text-align:right;font-family:'DM Sans',sans-serif;"></p>`;
         document.body.appendChild(c);
     }
     document.getElementById('pdf-prog-msg').textContent   = mensaje;
@@ -357,91 +426,34 @@ function ocultarProgresoPDF() {
     const c = document.getElementById('pdf-progreso');
     if (!c) return;
     c.style.opacity = '0';
+    c.style.transition = 'opacity .4s';
     setTimeout(() => c.remove(), 450);
 }
 
-// ============================================================
-//  PORTADA DECORATIVA — PALETA ACADEMIA OSCURA & DORADO
-// ============================================================
+/* ── Portada PDF ── */
 function agregarPortada(doc, titulo) {
     doc.insertPage(1);
     doc.setPage(1);
     const { width, height } = doc.internal.pageSize;
-
-    // Fondo base: casi negro cálido
-    doc.setFillColor(18, 16, 14);
+    doc.setFillColor(250, 246, 237);
     doc.rect(0, 0, width, height, 'F');
-
-    // Textura de líneas horizontales sutiles (simula papel rayado)
-    doc.setDrawColor(30, 26, 18);
-    doc.setLineWidth(0.3);
-    for (let y = 60; y < height - 60; y += 14) {
-        doc.line(0, y, width, y);
-    }
-
-    // Franjas doradas superior e inferior
-    doc.setFillColor(122, 90, 10);
-    doc.rect(0, 0, width, 10, 'F');
-    doc.rect(0, height - 10, width, 10, 'F');
-
-    // Borde interior dorado fino
-    doc.setDrawColor(168, 124, 16);
-    doc.setLineWidth(0.8);
-    doc.rect(22, 22, width - 44, height - 44, 'S');
-
-    // Esquineros decorativos
-    const esq = 14;
-    doc.setDrawColor(200, 153, 26);
-    doc.setLineWidth(1.4);
-    // Esquina superior izquierda
-    doc.line(22, 22, 22 + esq, 22);
-    doc.line(22, 22, 22, 22 + esq);
-    // Esquina superior derecha
-    doc.line(width - 22, 22, width - 22 - esq, 22);
-    doc.line(width - 22, 22, width - 22, 22 + esq);
-    // Esquina inferior izquierda
-    doc.line(22, height - 22, 22 + esq, height - 22);
-    doc.line(22, height - 22, 22, height - 22 - esq);
-    // Esquina inferior derecha
-    doc.line(width - 22, height - 22, width - 22 - esq, height - 22);
-    doc.line(width - 22, height - 22, width - 22, height - 22 - esq);
-
-    // Líneas divisorias horizontales del centro
-    doc.setDrawColor(74, 62, 40);
-    doc.setLineWidth(0.5);
-    doc.line(60, height / 2 - 52, width - 60, height / 2 - 52);
-    doc.line(60, height / 2 + 38, width - 60, height / 2 + 38);
-
-    // Etiqueta "INFRAMEN" pequeña arriba
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(122, 90, 10);
-    doc.text('INSTITUTO NACIONAL "GENERAL FRANCISCO MENÉNDEZ"', width / 2, height / 2 - 66, { align: 'center' });
-
-    // Título principal
+    doc.setFillColor(139, 105, 20);
+    doc.rect(0, 0, width, 8, 'F');
+    doc.rect(0, height - 8, width, 8, 'F');
+    doc.setDrawColor(180, 150, 80);
+    doc.setLineWidth(0.6);
+    doc.line(60, height / 2 - 60, width - 60, height / 2 - 60);
+    doc.line(60, height / 2 + 40, width - 60, height / 2 + 40);
     doc.setFont('times', 'bold');
-    doc.setFontSize(26);
-    doc.setTextColor(200, 153, 26);
+    doc.setFontSize(28);
+    doc.setTextColor(58, 46, 34);
     const lineas = doc.splitTextToSize(titulo, width - 120);
-    doc.text(lineas, width / 2, height / 2 - 14, { align: 'center', baseline: 'middle' });
-
-    // Línea decorativa entre título y fecha
-    doc.setDrawColor(122, 90, 10);
-    doc.setLineWidth(0.4);
-    doc.line(width / 2 - 50, height / 2 + 22, width / 2 + 50, height / 2 + 22);
-
-    // Fecha
+    doc.text(lineas, width / 2, height / 2 - 20, { align: 'center', baseline: 'middle' });
     const fecha = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
     doc.setFont('times', 'italic');
-    doc.setFontSize(11);
-    doc.setTextColor(168, 124, 16);
-    doc.text(fecha, width / 2, height / 2 + 52, { align: 'center' });
-
-    // Pie de portada
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(74, 62, 40);
-    doc.text('Cuaderno Digital · INFRAMEN', width / 2, height - 30, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setTextColor(120, 100, 60);
+    doc.text(fecha, width / 2, height / 2 + 60, { align: 'center' });
 }
 
 function agregarMetadata(doc, titulo) {
@@ -450,7 +462,7 @@ function agregarMetadata(doc, titulo) {
         subject: 'Nota exportada desde el editor',
         author:  'Cuaderno Digital INFRAMEN',
         keywords:'nota, editor, exportación, INFRAMEN',
-        creator: 'Cuaderno Digital v2.0',
+        creator: 'Cuaderno Digital v3.0',
     });
 }
 
@@ -458,30 +470,21 @@ function agregarPieDePagina(doc, nombreArchivo) {
     const total = doc.getNumberOfPages();
     const fecha = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
+    doc.setFontSize(8);
+    doc.setTextColor(140, 120, 90);
     for (let i = 1; i <= total; i++) {
         doc.setPage(i);
         const { width, height } = doc.internal.pageSize;
-
-        // Franja inferior oscura
-        doc.setFillColor(18, 16, 14);
-        doc.rect(0, height - 28, width, 28, 'F');
-
-        // Línea dorada sobre la franja
-        doc.setDrawColor(74, 62, 40);
-        doc.setLineWidth(0.5);
-        doc.line(30, height - 28, width - 30, height - 28);
-
-        doc.setTextColor(122, 90, 10);
-        doc.text(nombreArchivo,          30,         height - 13);
-        doc.text(fecha,                  width / 2,  height - 13, { align: 'center' });
-        doc.text(`Pág. ${i} / ${total}`, width - 30, height - 13, { align: 'right' });
+        doc.setDrawColor(200, 185, 155);
+        doc.setLineWidth(0.3);
+        doc.line(40, height - 30, width - 40, height - 30);
+        doc.text(nombreArchivo,            40,         height - 18);
+        doc.text(fecha,                    width / 2,  height - 18, { align: 'center' });
+        doc.text(`Pág. ${i} / ${total}`,   width - 40, height - 18, { align: 'right'  });
     }
 }
 
-// ============================================================
-//  VISTA PREVIA ANTES DE DESCARGAR — TEMA OSCURO DORADO
-// ============================================================
+/* ── Vista previa PDF ── */
 function mostrarVistaPreviaPDF(pdfBlob, nombreArchivo, onDescargar) {
     document.getElementById('pdf-preview-overlay')?.remove();
     const url = URL.createObjectURL(pdfBlob);
@@ -489,62 +492,57 @@ function mostrarVistaPreviaPDF(pdfBlob, nombreArchivo, onDescargar) {
     const overlay = document.createElement('div');
     overlay.id = 'pdf-preview-overlay';
     overlay.style.cssText = `
-        position:fixed; inset:0; background:rgba(8,6,4,.82);
-        z-index:10000; display:flex; align-items:center;
-        justify-content:center; animation:fadeInOv .25s ease;
-        backdrop-filter:blur(5px);`;
+        position:fixed;inset:0;background:rgba(20,14,7,.80);
+        z-index:10000;display:flex;align-items:center;
+        justify-content:center;animation:fadeInOv .25s ease;`;
 
     overlay.innerHTML = `
         <style>
             @keyframes fadeInOv { from{opacity:0} to{opacity:1} }
             #ppbox {
-                background:#1c1915; border:1px solid #4a3e28; border-radius:14px;
-                width:min(820px,96vw); height:min(680px,90vh);
-                display:flex; flex-direction:column; overflow:hidden;
-                box-shadow:0 20px 60px rgba(0,0,0,.8),0 0 40px rgba(200,153,26,.1);
-                position:relative;
-            }
-            #ppbox::before {
-                content:''; position:absolute; top:0; left:0; right:0; height:3px;
-                border-radius:14px 14px 0 0;
-                background:linear-gradient(90deg,transparent,#c8991a,transparent);
+                background:var(--fondo-card,#231e17);
+                border:1px solid var(--borde,#3a3020);
+                border-radius:12px;
+                width:min(820px,96vw);height:min(680px,90vh);
+                display:flex;flex-direction:column;overflow:hidden;
+                box-shadow:0 20px 60px rgba(0,0,0,.6);
             }
             #pphead {
-                display:flex; align-items:center; justify-content:space-between;
-                padding:12px 18px; background:#12100e;
-                color:#c8b98a; font-family:'DM Sans',system-ui,sans-serif; font-size:13px;
-                border-bottom:1px solid #2e2618;
+                display:flex;align-items:center;justify-content:space-between;
+                padding:12px 18px;background:#1a1208;
+                color:var(--acento,#b09060);
+                font-family:'DM Sans',sans-serif;font-size:14px;
             }
-            #pphead strong { color:#c8991a; font-family:'Playfair Display',Georgia,serif; }
             #pphead button {
-                background:none; border:none; cursor:pointer; color:#7a6a50;
-                font-size:20px; line-height:1; padding:0 4px;
-                border-radius:4px; transition:color .15s,background .15s;
+                background:none;border:none;cursor:pointer;
+                color:var(--acento,#b09060);font-size:20px;
+                line-height:1;padding:0 4px;border-radius:4px;
+                transition:background .15s;
             }
-            #pphead button:hover { color:#f0e4c0; background:rgba(200,153,26,.15); }
+            #pphead button:hover { background:rgba(255,255,255,.12); }
             #ppfoot {
-                display:flex; gap:10px; padding:12px 18px;
-                background:#12100e; border-top:1px solid #2e2618;
+                display:flex;gap:10px;padding:12px 18px;
+                background:#1a1208;border-top:1px solid #3a3020;
                 justify-content:flex-end;
             }
             .ppbtn {
-                font-family:'DM Sans',system-ui,sans-serif; font-size:12px; font-weight:600;
-                padding:8px 20px; border-radius:5px; cursor:pointer;
-                transition:background .15s,transform .1s; letter-spacing:.03em;
+                font-family:'DM Sans',sans-serif;font-size:13px;
+                padding:8px 20px;border-radius:6px;cursor:pointer;
+                border:1px solid #b09060;transition:background .15s,transform .1s;
             }
             .ppbtn:active { transform:scale(.97); }
-            .ppbtn-ok  { background:#a87c10; color:#0e0c0a; border:1px solid #c8991a; }
-            .ppbtn-ok:hover { background:#c8991a; }
-            .ppbtn-no  { background:#2a2520; color:#c8b98a; border:1px solid #4a3e28; }
-            .ppbtn-no:hover { background:#3a3025; color:#f0e4c0; }
+            .ppbtn-ok  { background:#8b6914;color:#fff;border-color:#8b6914; }
+            .ppbtn-ok:hover { background:#6d5010; }
+            .ppbtn-no  { background:transparent;color:#b09060; }
+            .ppbtn-no:hover { background:rgba(176,144,96,.1); }
         </style>
         <div id="ppbox">
             <div id="pphead">
-                <span>📄 Vista previa — <strong>${nombreArchivo}</strong></span>
+                <span>📄 Vista previa — <em>${nombreArchivo}</em></span>
                 <button id="pp-x" title="Cerrar">&times;</button>
             </div>
             <iframe src="${url}#toolbar=0"
-                    style="flex:1;border:none;width:100%;background:#12100e;"></iframe>
+                    style="flex:1;border:none;width:100%;"></iframe>
             <div id="ppfoot">
                 <button class="ppbtn ppbtn-no" id="pp-cancel">Cancelar</button>
                 <button class="ppbtn ppbtn-ok" id="pp-dl">⬇ Descargar PDF</button>
@@ -564,13 +562,12 @@ function mostrarVistaPreviaPDF(pdfBlob, nombreArchivo, onDescargar) {
     overlay.addEventListener('click', e => { if (e.target === overlay) cerrar(); });
 }
 
-// ============================================================
-//  GENERAR PDF — con estilos del tema INFRAMEN
-// ============================================================
+/* ============================================================
+   GENERAR PDF
+   ============================================================ */
 const generarPDF = async () => {
     const titulo    = document.getElementById('titulo').value.trim();
     const contenido = CKEDITOR.instances.editor.getData();
-
     if (!titulo)    { mostrarToast('⚠️ Escribe un título primero.', 'error'); return; }
     if (!contenido) { mostrarToast('⚠️ El editor está vacío.',      'error'); return; }
 
@@ -578,7 +575,6 @@ const generarPDF = async () => {
 
     try {
         const { jsPDF } = window.jspdf;
-
         mostrarProgresoPDF(10, 'Preparando contenido…');
 
         const A4_W = 595, A4_H = 842;
@@ -586,136 +582,58 @@ const generarPDF = async () => {
         const AREA_W = A4_W - MX * 2;
         const AREA_H = A4_H - MT - MB;
 
-        // Contenedor con estilo academia oscura & dorado
         const el = document.createElement('div');
         el.innerHTML =
-            `<div style="
-                background:#12100e;
-                padding:28px 32px 12px;
-                border-bottom:2px solid #4a3e28;
-                margin:-0px -0px 24px;
-             ">
-                <div style="
-                    font-family:Georgia,serif;
-                    font-size:7px;
-                    letter-spacing:.12em;
-                    color:#7a5a0a;
-                    text-transform:uppercase;
-                    margin-bottom:6px;
-                ">INFRAMEN — Cuaderno Digital</div>
-                <h1 style="
-                    font-family:Georgia,serif;
-                    font-size:22px;
-                    color:#c8991a;
-                    margin:0;
-                    font-weight:bold;
-                    line-height:1.3;
-                ">${titulo}</h1>
-             </div>` +
+            `<h1 style="text-align:center;color:#3a2e22;font-family:Georgia,serif;
+                        margin:0 0 8px;">${titulo}</h1>
+             <hr style="border:none;border-top:1px solid #d4c9b0;margin:0 0 20px;">` +
             contenido;
-
         el.style.cssText = [
             `width:${AREA_W}px`,
             'padding:0',
             'font-family:Georgia,serif',
             'font-size:13px',
-            'line-height:1.75',
-            'color:#c8b98a',          // texto dorado claro
-            'background:#12100e',     // fondo casi negro
+            'line-height:1.7',
+            'color:#1a1a1a',
+            'background:#ffffff',
             'box-sizing:border-box',
             'position:absolute',
             'left:-9999px',
             'top:0'
         ].join(';');
-
-        // Estilos internos para que el contenido HTML del editor se vea coherente
-        const styleTag = document.createElement('style');
-        styleTag.textContent = `
-            h1,h2,h3,h4,h5,h6 {
-                font-family:Georgia,serif;
-                color:#c8991a;
-                margin:.8em 0 .4em;
-            }
-            p  { margin-bottom:.6em; }
-            a  { color:#a87c10; }
-            strong, b { color:#f0e4c0; }
-            em, i { color:#c8b98a; }
-            code, pre {
-                font-family:'Courier New',monospace;
-                background:#1c1915;
-                color:#c8991a;
-                padding:.15em .4em;
-                border-radius:3px;
-                font-size:.9em;
-            }
-            pre  { padding:.7em 1em; white-space:pre-wrap; }
-            blockquote {
-                border-left:3px solid #4a3e28;
-                padding-left:1em;
-                color:#7a6a50;
-                margin:.8em 0;
-            }
-            table {
-                border-collapse:collapse;
-                width:100%;
-                margin:.8em 0;
-                font-size:.88em;
-            }
-            th {
-                background:#2a2520;
-                color:#c8991a;
-                border:1px solid #4a3e28;
-                padding:.4em .7em;
-                text-align:left;
-            }
-            td {
-                border:1px solid #2e2618;
-                padding:.35em .7em;
-                color:#c8b98a;
-            }
-            tr:nth-child(even) td { background:#1c1915; }
-            ul, ol { padding-left:1.4em; margin-bottom:.6em; }
-            li     { margin-bottom:.25em; }
-            hr     { border:none; border-top:1px solid #2e2618; margin:1em 0; }
-        `;
-        el.appendChild(styleTag);
         document.body.appendChild(el);
 
         mostrarProgresoPDF(25, 'Procesando imágenes…');
         await convertirImagenesABase64(el);
 
         mostrarProgresoPDF(45, 'Capturando contenido…');
-
         const canvas = await html2canvas(el, {
             scale:           2,
             useCORS:         true,
             logging:         false,
-            backgroundColor: '#12100e',
+            backgroundColor: '#ffffff',
             width:           AREA_W,
             windowWidth:     AREA_W,
         });
 
         mostrarProgresoPDF(65, 'Paginando…');
-
-        const escala      = canvas.width / AREA_W;
-        const alturaPagPx = AREA_H * escala;
+        const escala       = canvas.width / AREA_W;
+        const alturaPagPx  = AREA_H * escala;
 
         const cortesNaturales = [0];
         const elRect = el.getBoundingClientRect();
-        const bloques = el.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, tr, div, img');
-        bloques.forEach(bloque => {
+        el.querySelectorAll('p,h1,h2,h3,h4,h5,h6,li,tr,div,img').forEach(bloque => {
             const rect = bloque.getBoundingClientRect();
-            const yRelativo = (rect.top - elRect.top) * escala;
-            if (yRelativo > 0) cortesNaturales.push(Math.round(yRelativo));
+            const yRel = (rect.top - elRect.top) * escala;
+            if (yRel > 0) cortesNaturales.push(Math.round(yRel));
         });
         cortesNaturales.push(canvas.height);
-
         document.body.removeChild(el);
 
         const cortesPagina = [0];
-        let paginaActual = 1;
+        let pagAct = 1;
         while (true) {
-            const idealY = paginaActual * alturaPagPx;
+            const idealY = pagAct * alturaPagPx;
             if (idealY >= canvas.height) break;
             let mejorCorte = idealY;
             for (let j = cortesNaturales.length - 1; j >= 0; j--) {
@@ -723,7 +641,7 @@ const generarPDF = async () => {
             }
             if (idealY - mejorCorte > alturaPagPx * 0.20) mejorCorte = idealY;
             cortesPagina.push(Math.round(mejorCorte));
-            paginaActual++;
+            pagAct++;
         }
         cortesPagina.push(canvas.height);
 
@@ -732,18 +650,6 @@ const generarPDF = async () => {
 
         for (let i = 0; i < cortesPagina.length - 1; i++) {
             if (i > 0) doc.addPage();
-
-            // Fondo de página oscuro
-            doc.setFillColor(18, 16, 14);
-            doc.rect(0, 0, A4_W, A4_H, 'F');
-
-            // Franja dorada superior de página
-            doc.setFillColor(42, 37, 32);
-            doc.rect(0, 0, A4_W, MT, 'F');
-            doc.setDrawColor(74, 62, 40);
-            doc.setLineWidth(0.5);
-            doc.line(30, MT, A4_W - 30, MT);
-
             const srcY = cortesPagina[i];
             const srcH = cortesPagina[i + 1] - srcY;
             if (srcH <= 0) continue;
@@ -752,7 +658,7 @@ const generarPDF = async () => {
             trozo.width  = canvas.width;
             trozo.height = Math.ceil(alturaPagPx);
             const ctx = trozo.getContext('2d');
-            ctx.fillStyle = '#12100e';
+            ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, trozo.width, trozo.height);
             ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
             const imgData = trozo.toDataURL('image/jpeg', 0.93);
@@ -791,12 +697,50 @@ const generarPDF = async () => {
     }
 };
 
-// ============================================================
-//  LIBRO — CUADERNO ESPIRAL
-// ============================================================
-let paginasLibro       = [];
-let paginaActualLibro  = 0;
-let tapaAbierta        = false;
+/* ============================================================
+   LIBRO — CUADERNO ESPIRAL
+   FIX PRINCIPAL: el bug de la tapa estaba en la mezcla de
+   transform-origin y el uso de classList sin limpiar estados.
+   Ahora la tapa usa puro CSS rotateY(-165deg) desde el lomo
+   y el JS solo añade/quita la clase "abierta".
+   ============================================================ */
+let paginasLibro      = [];
+let paginaActualLibro = 0;
+let tapaAbierta       = false;
+let _animandoTapa     = false;
+
+/* Filtra las páginas del libro por título */
+let _paginasFiltradas = [];
+
+function filtrarNotasLibro(valor) {
+    const q = valor.toLowerCase().trim();
+    if (!q) {
+        _paginasFiltradas = [...paginasLibro];
+    } else {
+        _paginasFiltradas = paginasLibro.filter(p => p.titulo.toLowerCase().includes(q));
+    }
+    const count = document.getElementById('libro-search-count');
+    count.textContent = q ? `${_paginasFiltradas.length} resultado${_paginasFiltradas.length !== 1 ? 's' : ''}` : '';
+
+    // Reconstruir dots
+    const dotsContainer = document.getElementById('nav-dots');
+    dotsContainer.innerHTML = '';
+    _paginasFiltradas.forEach((_, i) => {
+        const dot = document.createElement('button');
+        dot.className = 'nav-dot' + (i === 0 ? ' activo' : '');
+        dot.setAttribute('aria-label', `Página ${i + 1}`);
+        dot.onclick = () => { paginaActualLibro = i; renderPaginaLibro(); };
+        dotsContainer.appendChild(dot);
+    });
+
+    paginaActualLibro = 0;
+    if (_paginasFiltradas.length > 0) renderPaginaLibro();
+    else {
+        document.getElementById('pagina-titulo').textContent = '— Sin resultados —';
+        document.getElementById('pagina-cuerpo').innerHTML   = '<p style="color:#a09070;font-style:italic;">No se encontraron notas con ese término.</p>';
+        document.getElementById('nav-info').textContent      = 'Pág 0 / 0';
+    }
+}
 
 function generarEspiral() {
     const svg = document.getElementById('espiral-svg');
@@ -806,16 +750,16 @@ function generarEspiral() {
     for (let i = 1; i <= total; i++) {
         const cy = paso * i;
         const arcAtras = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        arcAtras.setAttribute('d', `M 6 ${cy-7} A 7 7 0 0 0 6 ${cy+7}`);
+        arcAtras.setAttribute('d', `M 6 ${cy - 7} A 7 7 0 0 0 6 ${cy + 7}`);
         arcAtras.setAttribute('fill', 'none');
         arcAtras.setAttribute('stroke', '#555');
         arcAtras.setAttribute('stroke-width', '2');
         arcAtras.setAttribute('stroke-linecap', 'round');
         svg.appendChild(arcAtras);
         const arcFrente = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        arcFrente.setAttribute('d', `M 6 ${cy-7} A 7 7 0 0 1 6 ${cy+7}`);
+        arcFrente.setAttribute('d', `M 6 ${cy - 7} A 7 7 0 0 1 6 ${cy + 7}`);
         arcFrente.setAttribute('fill', 'none');
-        arcFrente.setAttribute('stroke', '#c8991a');
+        arcFrente.setAttribute('stroke', '#b09060');
         arcFrente.setAttribute('stroke-width', '2.2');
         arcFrente.setAttribute('stroke-linecap', 'round');
         svg.appendChild(arcFrente);
@@ -823,60 +767,159 @@ function generarEspiral() {
 }
 
 function renderPaginaLibro() {
-    if (paginasLibro.length === 0) return;
-    const p = paginasLibro[paginaActualLibro];
+    const lista = _paginasFiltradas.length > 0 ? _paginasFiltradas : paginasLibro;
+    if (lista.length === 0) return;
+    if (paginaActualLibro < 0)               paginaActualLibro = 0;
+    if (paginaActualLibro >= lista.length)   paginaActualLibro = lista.length - 1;
+
+    const p = lista[paginaActualLibro];
     document.getElementById('pagina-titulo').textContent = p.titulo;
     document.getElementById('pagina-cuerpo').innerHTML   = p.contenido;
     document.getElementById('pagina-numero').textContent = `${paginaActualLibro + 1}`;
-    document.getElementById('nav-info').textContent      = `Pág ${paginaActualLibro + 1} / ${paginasLibro.length}`;
+    document.getElementById('nav-info').textContent      = `Pág ${paginaActualLibro + 1} / ${lista.length}`;
     document.getElementById('btn-prev').disabled = paginaActualLibro === 0;
-    document.getElementById('btn-next').disabled = paginaActualLibro === paginasLibro.length - 1;
-    document.querySelectorAll('.nav-dot').forEach((d, i) => d.classList.toggle('activo', i === paginaActualLibro));
+    document.getElementById('btn-next').disabled = paginaActualLibro === lista.length - 1;
+
+    document.querySelectorAll('.nav-dot').forEach((d, i) =>
+        d.classList.toggle('activo', i === paginaActualLibro)
+    );
+
+    const cuerpo = document.getElementById('pagina-cuerpo');
+    if (cuerpo) cuerpo.scrollTop = 0;
 }
 
 function cambiarPaginaLibro(dir) {
+    const lista = _paginasFiltradas.length > 0 ? _paginasFiltradas : paginasLibro;
     const nuevo = paginaActualLibro + dir;
-    if (nuevo < 0 || nuevo >= paginasLibro.length) return;
+    if (nuevo < 0 || nuevo >= lista.length) return;
     paginaActualLibro = nuevo;
     renderPaginaLibro();
 }
 
+
+/* ============================================================
+   MANEJADOR DE CLICK EN LA ESCENA DEL CUADERNO
+   Un overlay transparente cubre toda la escena (z:25).
+   - Si la tapa está CERRADA: cualquier click abre el libro
+   - Si la tapa está ABIERTA: el overlay se desactiva (pointer-
+     events:none) para que los clicks lleguen a las páginas.
+     Solo la franja visible de la tapa (izquierda ~30px) sigue
+     siendo clicable gracias a que el overlay se desactiva.
+   ============================================================ */
+function manejarClickEscena(event) {
+    // Nunca procesar durante animación
+    if (_animandoTapa) return;
+
+    if (!tapaAbierta) {
+        // Cuaderno cerrado: abrir
+        toggleTapa();
+    } else {
+        // Cuaderno abierto: el overlay no debe estar activo
+        // (se desactiva en toggleTapa al abrir), pero por si acaso:
+        toggleTapa();
+    }
+}
+
+/* ── TOGGLE TAPA ──────────────────────────────────────────────
+   - Cerrada: click abre el libro (rotateY -170°)
+   - Abierta:  click en la PASTA también cierra el libro.
+     En CSS la clase .abierta mantiene pointer-events:auto y
+     cursor:pointer para que la pasta sea clicable de vuelta.
+   - El botón "Abrir/Cerrar cuaderno" también llama aquí.
+   - El hint de texto cambia dinámicamente: "clic para abrir"
+     / "clic para cerrar".
+   ───────────────────────────────────────────────────────── */
 function toggleTapa() {
-    if (paginasLibro.length === 0) { mostrarToast('📖 No hay notas guardadas aún.', 'info'); return; }
-    tapaAbierta = !tapaAbierta;
+    if (_animandoTapa) return;
+
+    if (paginasLibro.length === 0) {
+        mostrarToast('📖 No hay notas guardadas aún.', 'info');
+        return;
+    }
+
+    _animandoTapa = true;
+    tapaAbierta   = !tapaAbierta;
+
     const tapa      = document.getElementById('cuaderno-tapa');
     const paginas   = document.getElementById('cuaderno-paginas');
     const nav       = document.getElementById('libro-nav');
     const btnToggle = document.getElementById('btn-toggle-tapa');
-    tapa.classList.toggle('abierta', tapaAbierta);
-    btnToggle.textContent = tapaAbierta ? 'Cerrar cuaderno' : 'Abrir cuaderno';
-    btnToggle.classList.toggle('abierto', tapaAbierta);
+    const hint      = tapa ? tapa.querySelector('.tapa-hint') : null;
+
     if (tapaAbierta) {
-        setTimeout(() => { paginas.classList.add('visible'); nav.classList.add('visible'); }, 380);
+        /* ── ABRIR ── */
+        tapa.classList.add('abierta');
+        btnToggle.textContent = 'Cerrar cuaderno';
+        btnToggle.classList.add('abierto');
+
+        /* Páginas y nav aparecen a mitad del giro */
+        setTimeout(() => { paginas.classList.add('visible'); }, 380);
+        setTimeout(() => { nav.classList.add('visible');     }, 480);
+
+        /* Actualizar hint */
+        if (hint) hint.textContent = '— clic para cerrar —';
+
+        /* Desactivar overlay: las páginas ya son interactivas */
+        setTimeout(() => {
+            const ov = document.getElementById('tapa-click-overlay');
+            if (ov) ov.style.pointerEvents = 'none';
+        }, 500);
+
     } else {
+        /* ── CERRAR ── */
         paginas.classList.remove('visible');
         nav.classList.remove('visible');
+
+        /* Reactivar overlay para capturar el próximo click de apertura */
+        const ov = document.getElementById('tapa-click-overlay');
+        if (ov) ov.style.pointerEvents = 'auto';
+
+        /* La tapa vuelve después de que las páginas se ocultan */
+        setTimeout(() => {
+            tapa.classList.remove('abierta');
+            btnToggle.textContent = 'Abrir cuaderno';
+            btnToggle.classList.remove('abierto');
+            if (hint) hint.textContent = '— clic para abrir —';
+        }, 80);
     }
+
+    /* Desbloquear tras la transición CSS (0.85s) */
+    setTimeout(() => { _animandoTapa = false; }, 950);
 }
 
 function abrirLibro() {
     const claves = Object.keys(localStorage).filter(k => k.startsWith('nota__'));
-    if (claves.length === 0) { mostrarToast('📖 El cuaderno está vacío. Guarda algunas notas primero.', 'info'); return; }
-    paginasLibro = claves.map(clave => ({
+    if (claves.length === 0) {
+        mostrarToast('📖 El cuaderno está vacío. Guarda algunas notas primero.', 'info');
+        return;
+    }
+
+    paginasLibro = claves.sort().map(clave => ({
         titulo:    clave.replace('nota__', ''),
         contenido: localStorage.getItem(clave)
     }));
-    paginaActualLibro = 0;
-    tapaAbierta       = false;
+    _paginasFiltradas  = [];
+    paginaActualLibro  = 0;
+    tapaAbierta        = false;
+    _animandoTapa      = false;
+
+    /* Reset visual */
     const tapa      = document.getElementById('cuaderno-tapa');
     const paginas   = document.getElementById('cuaderno-paginas');
     const nav       = document.getElementById('libro-nav');
     const btnToggle = document.getElementById('btn-toggle-tapa');
+    const searchInp = document.getElementById('libro-search-input');
+    const searchCnt = document.getElementById('libro-search-count');
+
     tapa.classList.remove('abierta');
     paginas.classList.remove('visible');
     nav.classList.remove('visible');
     btnToggle.textContent = 'Abrir cuaderno';
     btnToggle.classList.remove('abierto');
+    if (searchInp) searchInp.value = '';
+    if (searchCnt) searchCnt.textContent = '';
+
+    /* Dots de navegación */
     const dotsContainer = document.getElementById('nav-dots');
     dotsContainer.innerHTML = '';
     paginasLibro.forEach((_, i) => {
@@ -886,70 +929,59 @@ function abrirLibro() {
         dot.onclick = () => { paginaActualLibro = i; renderPaginaLibro(); };
         dotsContainer.appendChild(dot);
     });
+
     generarEspiral();
     renderPaginaLibro();
+
     const seccion = document.getElementById('seccion-libro');
     seccion.style.display = 'block';
-    seccion.scrollIntoView({ behavior: 'smooth' });
+    seccion.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function cerrarLibro() {
+    const seccion   = document.getElementById('seccion-libro');
+    const tapa      = document.getElementById('cuaderno-tapa');
+    const paginas   = document.getElementById('cuaderno-paginas');
+    const nav       = document.getElementById('libro-nav');
+    const btnToggle = document.getElementById('btn-toggle-tapa');
+
     if (tapaAbierta) {
-        toggleTapa();
-        setTimeout(() => { document.getElementById('seccion-libro').style.display = 'none'; }, 800);
+        paginas.classList.remove('visible');
+        nav.classList.remove('visible');
+        setTimeout(() => {
+            tapa.classList.remove('abierta');
+            btnToggle.textContent = 'Abrir cuaderno';
+            btnToggle.classList.remove('abierto');
+            tapaAbierta = false;
+        }, 80);
+        setTimeout(() => { seccion.style.display = 'none'; }, 950);
     } else {
-        document.getElementById('seccion-libro').style.display = 'none';
+        seccion.style.display = 'none';
     }
 }
 
-// ============================================================
-//  GUÍA DE INGLÉS
-// ============================================================
-function toggleIngles() {
-    const seccion = document.getElementById('seccion-ingles');
-    const visible = seccion.style.display === 'block';
-    seccion.style.display = visible ? 'none' : 'block';
-    if (!visible) seccion.scrollIntoView({ behavior: 'smooth' });
+/* Botón "Editar esta página" — carga la nota actual en el editor */
+function editarPaginaActual() {
+    const lista = _paginasFiltradas.length > 0 ? _paginasFiltradas : paginasLibro;
+    if (lista.length === 0) return;
+    const p = lista[paginaActualLibro];
+    cerrarLibro();
+    setTimeout(() => {
+        document.getElementById('titulo').value = p.titulo;
+        CKEDITOR.instances.editor.setData(p.contenido);
+        ultimoTituloAutoguardado    = p.titulo;
+        ultimoContenidoAutoguardado = p.contenido;
+        clearTimeout(autoguardadoTimer);
+        actualizarIndicador('guardado');
+        actualizarContadorPalabras();
+        document.getElementById('titulo').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        mostrarToast(`✏️ Editando "${p.titulo}".`, 'exito');
+    }, 400);
 }
 
-function cambiarTab(evt, tabId) {
-    document.querySelectorAll('.contenido-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
-    evt.currentTarget.classList.add('active');
-}
-
-function verificarRespuestas() {
-    const respuestas = [
-        { id:'ex1', correcta:'is'      },
-        { id:'ex2', correcta:'are'     },
-        { id:'ex3', correcta:'are'     },
-        { id:'ex4', correcta:'was'     },
-        { id:'ex5', correcta:'will be' },
-    ];
-    let correctas = 0;
-    respuestas.forEach(({ id, correcta }) => {
-        const input = document.getElementById(id);
-        const valor = input.value.trim().toLowerCase();
-        if (valor === correcta) {
-            input.classList.remove('incorrecto');
-            input.classList.add('correcto');
-            correctas++;
-        } else {
-            input.classList.remove('correcto');
-            input.classList.add('incorrecto');
-        }
-    });
-    if (correctas === respuestas.length) {
-        mostrarToast('🎉 ¡Todas correctas! Excelente trabajo.', 'exito', 4000);
-    } else {
-        mostrarToast(`✏️ ${correctas}/${respuestas.length} correctas. ¡Revisa las marcadas en rojo!`, 'error', 4000);
-    }
-}
-
-// ============================================================
-//  CARGA DE ARCHIVOS — ESTADO GLOBAL
-// ============================================================
+/* ============================================================
+   CARGA DE ARCHIVOS
+   ============================================================ */
 let _archivoHTMLPendiente   = '';
 let _archivoNombrePendiente = '';
 
@@ -957,14 +989,18 @@ async function manejarArchivoSubido(inputEl) {
     const archivo = inputEl.files[0];
     if (!archivo) return;
     inputEl.value = '';
+
     const nombre = archivo.name;
     const ext    = nombre.split('.').pop().toLowerCase();
     const titulo = nombre.replace(/\.[^/.]+$/, '');
+
     mostrarToast('⏳ Procesando archivo...', 'info', 2000);
+
     try {
         let htmlResultado = '';
         let icono    = '📄';
         let tipoDesc = '';
+
         if (ext === 'pdf') {
             icono = '📕'; tipoDesc = 'Documento PDF';
             htmlResultado = await leerPDF(archivo);
@@ -981,43 +1017,47 @@ async function manejarArchivoSubido(inputEl) {
             mostrarToast(`❌ Tipo de archivo ".${ext}" no soportado.`, 'error');
             return;
         }
+
         _archivoHTMLPendiente   = htmlResultado;
         _archivoNombrePendiente = titulo;
         abrirModalArchivo(icono, nombre, tipoDesc, htmlResultado, titulo);
+
     } catch (err) {
         console.error('[manejarArchivoSubido]', err);
         mostrarToast('❌ Error al procesar el archivo. Revisa la consola.', 'error');
     }
 }
 
+/* ── Lectores por tipo ── */
 async function leerPDF(archivo) {
     if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js no cargado');
     pdfjsLib.GlobalWorkerOptions.workerSrc =
         'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
     const arrayBuffer = await archivo.arrayBuffer();
     const pdf         = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     let html = '';
     const ESCALA = 1.5;
+
     for (let i = 1; i <= pdf.numPages; i++) {
         const page     = await pdf.getPage(i);
         const viewport = page.getViewport({ scale: ESCALA });
-        const canvas  = document.createElement('canvas');
-        canvas.width  = Math.floor(viewport.width);
-        canvas.height = Math.floor(viewport.height);
+        const canvas   = document.createElement('canvas');
+        canvas.width   = Math.floor(viewport.width);
+        canvas.height  = Math.floor(viewport.height);
         await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
         const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
         html += `
             <div style="margin-bottom:16px;">
-                <p style="margin:0 0 4px;font-size:0.75rem;color:#7a5a0a;
-                           font-family:Georgia,serif;letter-spacing:0.05em;">
+                <p style="margin:0 0 4px;font-size:0.75rem;color:#8b6914;font-family:Georgia,serif;">
                     Página ${i} / ${pdf.numPages}
                 </p>
                 <img src="${dataUrl}" alt="Página ${i}"
                      style="display:block;width:100%;height:auto;
-                            border:1px solid #2e2618;border-radius:4px;
-                            box-shadow:0 2px 8px rgba(0,0,0,0.4);">
+                            border:1px solid #d4c9b0;border-radius:4px;">
             </div>`;
-        if (i < pdf.numPages) html += '<hr style="border:none;border-top:1px dashed #2e2618;margin:4px 0 16px;">';
+        if (i < pdf.numPages)
+            html += '<hr style="border:none;border-top:1px dashed #d4c9b0;margin:4px 0 16px;">';
     }
     return html || '<p><em>(No se pudo renderizar el PDF.)</em></p>';
 }
@@ -1035,10 +1075,10 @@ async function leerImagen(archivo) {
         reader.onload  = e => {
             const src  = e.target.result;
             const html = `<p style="text-align:center;">
-                            <img src="${src}" alt="${escaparHTML(archivo.name)}"
-                                 style="max-width:100%;height:auto;border-radius:4px;
-                                        box-shadow:0 2px 10px rgba(0,0,0,.5);">
-                          </p>`;
+                <img src="${src}" alt="${escaparHTML(archivo.name)}"
+                     style="max-width:100%;height:auto;border-radius:4px;
+                            box-shadow:0 2px 10px rgba(0,0,0,0.15);">
+            </p>`;
             resolve(html);
         };
         reader.onerror = reject;
@@ -1047,12 +1087,12 @@ async function leerImagen(archivo) {
 }
 
 async function leerTexto(archivo) {
-    const texto = await archivo.text();
+    const texto  = await archivo.text();
     const lineas = texto.split('\n');
     let html = '';
     lineas.forEach(linea => {
         const l = linea.trim();
-        if (!l)             html += '<br>';
+        if (!l)              html += '<br>';
         else if (l.startsWith('# '))   html += `<h1>${escaparHTML(l.slice(2))}</h1>`;
         else if (l.startsWith('## '))  html += `<h2>${escaparHTML(l.slice(3))}</h2>`;
         else if (l.startsWith('### ')) html += `<h3>${escaparHTML(l.slice(4))}</h3>`;
@@ -1061,15 +1101,13 @@ async function leerTexto(archivo) {
     return html;
 }
 
-// ============================================================
-//  MODAL ARCHIVO
-// ============================================================
+/* ── Modal de previsualización ── */
 function abrirModalArchivo(icono, nombre, tipoDesc, htmlContenido, tituloSugerido) {
-    document.getElementById('modal-archivo-icono').textContent   = icono;
-    document.getElementById('modal-archivo-nombre').textContent  = nombre;
-    document.getElementById('modal-archivo-tipo').textContent    = tipoDesc;
-    document.getElementById('modal-titulo-input').value          = tituloSugerido;
-    document.getElementById('modal-archivo-preview').innerHTML   = htmlContenido;
+    document.getElementById('modal-archivo-icono').textContent  = icono;
+    document.getElementById('modal-archivo-nombre').textContent = nombre;
+    document.getElementById('modal-archivo-tipo').textContent   = tipoDesc;
+    document.getElementById('modal-titulo-input').value         = tituloSugerido;
+    document.getElementById('modal-archivo-preview').innerHTML  = htmlContenido;
     document.getElementById('modal-archivo').classList.add('abierto');
 }
 
@@ -1102,17 +1140,18 @@ function insertarArchivoEnEditor() {
         ultimoContenidoAutoguardado = _archivoHTMLPendiente;
         clearTimeout(autoguardadoTimer);
         actualizarIndicador('guardado');
+        actualizarContadorPalabras();
         mostrarToast(`✅ "${tituloIngresado}" importada y guardada.`, 'exito', 3500);
-    } catch(e) {
+    } catch (e) {
         mostrarToast('⚠️ Contenido insertado pero no guardado (almacenamiento lleno).', 'error');
     }
     cerrarModalArchivo();
     document.getElementById('titulo').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-// ============================================================
-//  UTILIDAD
-// ============================================================
+/* ============================================================
+   UTILIDAD
+   ============================================================ */
 function escaparHTML(str) {
     return str
         .replace(/&/g, '&amp;')
@@ -1121,24 +1160,28 @@ function escaparHTML(str) {
         .replace(/"/g, '&quot;');
 }
 
-// ============================================================
-//  EXPORTAR / IMPORTAR NOTAS
-// ============================================================
+/* ============================================================
+   EXPORTAR / IMPORTAR NOTAS (backup JSON)
+   ============================================================ */
 function exportarNotas() {
     const claves = Object.keys(localStorage).filter(k => k.startsWith('nota__'));
-    if (claves.length === 0) { mostrarToast('⚠️ No hay notas guardadas para exportar.', 'error'); return; }
+    if (claves.length === 0) {
+        mostrarToast('⚠️ No hay notas guardadas para exportar.', 'error');
+        return;
+    }
     const datos = {};
     claves.forEach(clave => { datos[clave.replace('nota__', '')] = localStorage.getItem(clave); });
-    const json  = JSON.stringify(datos, null, 2);
-    const blob  = new Blob([json], { type: 'application/json' });
-    const url   = URL.createObjectURL(blob);
-    const fecha = new Date().toISOString().slice(0, 10);
-    const a     = document.createElement('a');
+    const json          = JSON.stringify(datos, null, 2);
+    const blob          = new Blob([json], { type: 'application/json' });
+    const url           = URL.createObjectURL(blob);
+    const fecha         = new Date().toISOString().slice(0, 10);
+    const nombreArchivo = `cuaderno-inframen-${fecha}.json`;
+    const a    = document.createElement('a');
     a.href     = url;
-    a.download = `cuaderno-inframen-${fecha}.json`;
+    a.download = nombreArchivo;
     a.click();
     URL.revokeObjectURL(url);
-    mostrarToast(`⬇ ${claves.length} nota(s) exportadas.`, 'exito', 4000);
+    mostrarToast(`⬇ ${claves.length} nota(s) exportadas como "${nombreArchivo}".`, 'exito', 4000);
 }
 
 function importarNotas(inputEl) {
@@ -1150,27 +1193,34 @@ function importarNotas(inputEl) {
         try {
             const datos = JSON.parse(e.target.result);
             if (typeof datos !== 'object' || Array.isArray(datos)) {
-                mostrarToast('❌ El archivo no tiene el formato correcto.', 'error'); return;
+                mostrarToast('❌ El archivo no tiene el formato correcto.', 'error');
+                return;
             }
             const entradas = Object.entries(datos);
-            if (entradas.length === 0) { mostrarToast('⚠️ El archivo está vacío.', 'error'); return; }
+            if (entradas.length === 0) {
+                mostrarToast('⚠️ El archivo está vacío.', 'error');
+                return;
+            }
             let importadas = 0, errores = 0;
             entradas.forEach(([titulo, contenido]) => {
                 if (typeof titulo === 'string' && typeof contenido === 'string') {
-                    try { localStorage.setItem('nota__' + titulo, contenido); importadas++; }
-                    catch (_) { errores++; }
+                    try {
+                        localStorage.setItem('nota__' + titulo, contenido);
+                        importadas++;
+                    } catch (_) { errores++; }
                 }
             });
             if (importadas > 0) {
                 mostrarToast(
-                    `✅ ${importadas} nota(s) importadas.` + (errores > 0 ? ` (${errores} fallaron.)` : ''),
+                    `✅ ${importadas} nota(s) importadas correctamente.` +
+                    (errores > 0 ? ` (${errores} fallaron por espacio.)` : ''),
                     'exito', 4000
                 );
             } else {
                 mostrarToast('❌ No se pudo importar ninguna nota. Almacenamiento lleno.', 'error');
             }
         } catch (err) {
-            mostrarToast('❌ Error al leer el archivo.', 'error');
+            mostrarToast('❌ Error al leer el archivo. ¿Es un JSON válido?', 'error');
             console.error('[importarNotas]', err);
         }
     };
