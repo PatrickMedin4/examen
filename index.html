@@ -16,14 +16,15 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
+    
     <!-- ======= CONTENEDOR PRINCIPAL ======= -->
     <div class="container">
 
         <!-- Cabecera -->
         <div class="cabecera">
-            <h1>Instituto Nacional "General Francisco Menéndez" — INFRAMEN 🦂</h1>
-            <h2>Cuaderno Digital de: <em>Brandon Patrick.</em></h2>
+            <img src="logo-in.png" alt="LOGO INFRAMEN" width="60px" height="60px">
+            <h1>Instituto Nacional "General Francisco Menéndez"</h1>
+            <h2>Cuaderno Digital de: Brandon Patrick</h2>
             <p>Sección 1-2 · Desarrollo de Software</p>
         </div>
 
@@ -37,11 +38,13 @@
             <button class="btn-listar"   onclick="abrirModalNotas()">📋 Ver Notas</button>
             <button class="btn-borrar"   onclick="eliminarNota()">🗑 Borrar</button>
             <button class="btn-pdf"      onclick="generarPDF()">📄 PDF</button>
-            <button class="btn-upload"   onclick="document.getElementById('file-input-hidden').click()">📁 Cargar Archivo</button>
             <button class="btn-libro"    onclick="abrirLibro()">📖 Ver Libro</button>
+            <button class="btn-upload"   onclick="document.getElementById('file-input-hidden').click()">📁 Cargar Archivo</button>
             <a href="cuestionario/index.html">
                 <button class="btn-cuestionario">❓ Cuestionario</button>
             </a>
+            <button class="btn-nueva"    onclick="nuevaHoja()">✨ Nueva hoja</button>
+            <button class="btn-stats"    onclick="abrirEstadisticas()">📊 Estadísticas</button>
         </div>
 
         <!-- Inputs ocultos -->
@@ -60,6 +63,12 @@
             onchange="importarNotas(this)"
         >
 
+        <!-- Indicadores -->
+        <div class="barra-estado">
+            <div id="indicador-autoguardado" class="indicador-autoguardado"></div>
+            <div id="contador-palabras" class="contador-palabras">0 palabras</div>
+        </div>
+
         <!-- Editor CKEditor -->
         <textarea id="editor"></textarea>
 
@@ -67,6 +76,12 @@
         <div class="seccion-libro" id="seccion-libro">
             <h3>📖 Vista de Libro</h3>
             <p class="libro-subtitulo">Haz clic en la portada para abrir el cuaderno</p>
+
+            <!-- Búsqueda en el libro -->
+            <div class="libro-search-bar" id="libro-search-bar">
+                <input type="text" id="libro-search-input" placeholder="🔍 Buscar nota..." oninput="filtrarNotasLibro(this.value)">
+                <span id="libro-search-count"></span>
+            </div>
 
             <div class="cuaderno-escena">
                 <div class="cuaderno-cuerpo" id="cuaderno-cuerpo">
@@ -87,8 +102,11 @@
                     <div class="cuaderno-tapa-front" id="cuaderno-tapa" onclick="toggleTapa()">
                         <div class="tapa-lomo"></div>
                         <div class="tapa-linea"></div>
-                        <div class="tapa-titulo" id="tapa-titulo">Cuaderno Digital</div>
+                        <img src="logo-in.png" alt="logo" width="50px" height="50px">
+                        <div class="tapa-titulo" id="tapa-titulo">Cuaderno Digital<br>David Reyes</div>
                         <div class="tapa-linea"></div>
+                        <div class="tapa-subtitulo">1-2 · Desarrollo de Software</div>
+                        <div class="tapa-hint">— clic para abrir —</div>
                     </div>
 
                     <!-- Espiral SVG — SIEMPRE al final para estar visualmente encima
@@ -119,6 +137,7 @@
 
             <div class="libro-acciones">
                 <button class="btn-toggle-cuaderno" id="btn-toggle-tapa" onclick="toggleTapa()">Abrir cuaderno</button>
+                <button class="btn-editar-pagina" onclick="editarPaginaActual()">✏️ Editar esta página</button>
                 <button class="btn-cerrar" onclick="cerrarLibro()">✕ Cerrar sección</button>
             </div>
         </div>
@@ -134,6 +153,39 @@
             </div>
             <div class="lista-notas" id="lista-notas-contenido"></div>
             <button class="btn-cerrar" onclick="cerrarModalNotas()">✕ Cerrar</button>
+        </div>
+    </div>
+
+    <!-- ======= MODAL: PREVISUALIZACIÓN DE ARCHIVO ======= -->
+    <div class="modal-overlay" id="modal-archivo" onclick="cerrarModalArchivSiFondo(event)">
+        <div class="modal-box modal-archivo-box">
+            <div class="modal-archivo-header">
+                <span id="modal-archivo-icono">📄</span>
+                <div>
+                    <h3 id="modal-archivo-nombre">Archivo cargado</h3>
+                    <p id="modal-archivo-tipo" style="font-size:0.78rem; color:var(--texto-muted); margin-top:2px;"></p>
+                </div>
+            </div>
+            <div class="modal-archivo-campo">
+                <label for="modal-titulo-input">Título de la hoja</label>
+                <input type="text" id="modal-titulo-input" placeholder="Escribe el título para esta nota...">
+            </div>
+            <div class="modal-archivo-preview" id="modal-archivo-preview"></div>
+            <div class="modal-archivo-footer">
+                <button class="btn-cerrar" onclick="cerrarModalArchivo()">✕ Cancelar</button>
+                <button class="btn-guardar-archivo" id="btn-insertar-archivo" onclick="insertarArchivoEnEditor()">
+                    ✅ Insertar en editor
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======= MODAL: ESTADÍSTICAS ======= -->
+    <div class="modal-overlay" id="modal-stats" onclick="if(event.target===this)cerrarEstadisticas()">
+        <div class="modal-box modal-stats-box">
+            <h3>📊 Estadísticas del Cuaderno</h3>
+            <div id="stats-contenido" class="stats-grid"></div>
+            <button class="btn-cerrar" onclick="cerrarEstadisticas()">✕ Cerrar</button>
         </div>
     </div>
 
