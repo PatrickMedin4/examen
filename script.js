@@ -147,6 +147,72 @@ function eliminarNota() {
     );
 }
 
+let _notaItems = []; // cache para filtrar
+
+function abrirModalNotas() {
+    const contenedor = document.getElementById('lista-notas-contenido');
+    contenedor.innerHTML = '';
+    _notaItems = [];
+    document.getElementById('modal-search-input').value = '';
+
+    const claves = Object.keys(localStorage)
+        .filter(k => k.startsWith('nota__'))
+        .sort();
+
+    if (claves.length === 0) {
+        contenedor.innerHTML = '<p class="modal-vacio">No hay notas guardadas todavía.</p>';
+    } else {
+        claves.forEach(clave => {
+            const tituloReal = clave.replace('nota__', '');
+            const item = document.createElement('div');
+            item.className = 'nota-item';
+            item.dataset.titulo = tituloReal.toLowerCase();
+            item.innerHTML = `
+                <span onclick="cargarDesdeModal('${tituloReal}')">📄 ${tituloReal}</span>
+                <button class="nota-borrar" onclick="borrarDesdeModal('${tituloReal}', this.parentElement)" title="Borrar nota">🗑</button>`;
+            contenedor.appendChild(item);
+            _notaItems.push(item);
+        });
+    }
+    document.getElementById('modal-notas').classList.add('abierto');
+}
+
+function filtrarModalNotas(valor) {
+    const q = valor.toLowerCase().trim();
+    _notaItems.forEach(item => {
+        item.style.display = item.dataset.titulo.includes(q) ? '' : 'none';
+    });
+}
+
+function cargarDesdeModal(titulo) {
+    document.getElementById('titulo').value = titulo;
+    const contenido = localStorage.getItem('nota__' + titulo);
+    if (contenido) {
+        CKEDITOR.instances.editor.setData(contenido);
+        ultimoTituloAutoguardado    = titulo;
+        ultimoContenidoAutoguardado = contenido;
+        clearTimeout(autoguardadoTimer);
+        actualizarIndicador('guardado');
+        actualizarContadorPalabras();
+        mostrarToast(`📂 "${titulo}" cargada.`, 'exito');
+    }
+    cerrarModalNotas();
+}
+
+function borrarDesdeModal(titulo, elemento) {
+    localStorage.removeItem('nota__' + titulo);
+    elemento.remove();
+    _notaItems = _notaItems.filter(i => i !== elemento);
+    mostrarToast(`🗑 "${titulo}" eliminada.`, 'info');
+    const lista = document.getElementById('lista-notas-contenido');
+    const visibles = lista.querySelectorAll('.nota-item');
+    if (visibles.length === 0)
+        lista.innerHTML = '<p class="modal-vacio">No hay notas guardadas todavía.</p>';
+}
+
+function cerrarModalNotas()    { document.getElementById('modal-notas').classList.remove('abierto'); }
+function cerrarModalSiFondo(e) { if (e.target === document.getElementById('modal-notas')) cerrarModalNotas(); }
+
 // ============================================================
 //  DIÁLOGO DE CONFIRMACIÓN
 // ============================================================
